@@ -1,0 +1,40 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar proyecto
+        uses: actions/checkout@v6
+
+      - name: Configurar Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Extraer proyecto Android
+        run: |
+          mkdir project
+          unzip -o "auto-mensaje-whatsapp-principal.zip" -d project
+
+      - name: Compilar APK
+        run: |
+          PROJECT_DIR="$(dirname "$(find project -type f -name gradlew | head -n 1)")"
+          echo "sdk.dir=$ANDROID_HOME" > "$PROJECT_DIR/local.properties"
+          chmod +x "$PROJECT_DIR/gradlew"
+          cd "$PROJECT_DIR"
+          ./gradlew :app:assembleDebug
+
+      - name: Guardar APK
+        uses: actions/upload-artifact@v5
+        with:
+          name: Space-Agency-APK
+          path: project/**/app/build/outputs/apk/debug/*.apk
